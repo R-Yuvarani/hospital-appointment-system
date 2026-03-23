@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Book Appointment - MediBook</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <nav class="navbar">
+    <a href="/" class="navbar-brand">Medi<span>Book</span></a>
+    <div class="navbar-links">
+      <a href="/dashboard">Dashboard</a>
+      <a href="#" onclick="logout()" style="color:var(--danger); margin-left:16px;">Logout</a>
+    </div>
+  </nav>
+
+  <div class="page-wrapper" style="max-width:600px;">
+    <h2 style="margin-bottom:8px;">Book an Appointment</h2>
+    <p style="color:var(--text-light); margin-bottom:32px;">Choose your doctor and preferred time slot</p>
+
+    <div id="alert" class="alert"></div>
+
+    <div class="card">
+      <!-- STEP 1: Choose Doctor -->
+      <div class="form-group">
+        <label for="doctorSelect">Select Doctor</label>
+        <select id="doctorSelect" onchange="onDoctorChange()">
+          <option value="">— Choose a doctor —</option>
+        </select>
+      </div>
+
+      <!-- Doctor Info (shows after selection) -->
+      <div id="doctorInfo" style="display:none; padding:14px; background:#eff6ff; border-radius:8px; margin-bottom:18px;">
+        <strong id="doctorName"></strong>
+        <span style="color:var(--text-light); font-size:0.9rem;" id="doctorSpec"></span>
+      </div>
+
+      <!-- STEP 2: Choose Date -->
+      <div class="form-group">
+        <label for="dateInput">Select Date</label>
+        <input type="date" id="dateInput" onchange="loadSlots()" />
+      </div>
+
+      <!-- STEP 3: Choose Time Slot -->
+      <div id="slotsSection" style="display:none;">
+        <label style="font-size:0.9rem; font-weight:600; display:block; margin-bottom:8px;">
+          Available Time Slots
+        </label>
+        <div class="slot-grid" id="slotGrid"></div>
+      </div>
+
+      <!-- STEP 4: Reason -->
+      <div class="form-group" style="margin-top:20px;">
+        <label for="reason">Reason for Visit</label>
+        <input type="text" id="reason" placeholder="e.g. Fever, Back pain, Regular checkup" />
+      </div>
+
+      <!-- Selected slot display -->
+      <div id="selectedSlotDisplay" style="display:none; padding:12px; background:#d1fae5; border-radius:8px; margin-bottom:16px;">
+        Selected slot: <strong id="selectedSlotText"></strong>
+      </div>
+
+      <button class="btn btn-primary" style="width:100%;" id="bookBtn" onclick="bookAppointment()" disabled>
+        Confirm Booking
+      </button>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    let selectedSlot = null;
+
+    // ─────────────────────────────────────
+    // On page load: check auth, load doctors
+    // ─────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', async () => {
+      await requireAuth();
+
+      // Set min date to today
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('dateInput').min = today;
+
+      await loadDoctors();
+    });
+
+    // ─────────────────────────────────────
+    // Load all doctors into dropdown
+    // ─────────────────────────────────────
+    async function loadDoctors() {
+      try {
+        const doctors = await api.get('/api/appointments/doctors');
+        const select = document.getElementById('doctorSelect');
+
+        if (doctors.length === 0) {
+          select.innerHTML = '<option value="">No doctors available</option>';
+          return;
+        }
+
+        select.innerHTML = '<option value="">— Choose a doctor —</option>' +
+          doctors.map(d =>
+            `<option value="${d._id}" data-name="${d.name}" data-spec="${d.specialization}">
+              Dr. ${d.name} — ${d.specialization || 'General'}
+            </option>`
+          ).join('');
+
+      } catch (err) {
+        showAlert('alert', 'Error loading doctors', 'error');
+      }
+    }
+
+    // ─────────────────────────────────────
+    // When doctor changes, show their info
+    // ─────────────────────────────────────
+    function onDoctorChange() {
+      const select = document.getElementById('doctorSelect');
+      const option = select.options[select.selectedIndex];
+
+      if (!select.value) {
+        document.getElementById('doctorInfo').style.display = 'none';
+        return;
+      }
+
+      document.getElementById('doctorName').textContent = `Dr. ${option.dataset.name}`;
+      document.getElementById('doctorSpec').textContent = ` · ${option.dataset.spec || 'General Physician'}`;
+      document.getElementById('doctorInfo').style.display = 'block';
+
+      // Reset slots
+      document.getElementById('slotsSection').style.display = 'none';
+      selectedSlot = null;
+      document.getElementById('bookBtn').disabled = true;
+
+      // If date is already selected, load slots
+      if (document.getElementById('dateInput').value) {
+        loadSlots();
+      }
+    }
+
+    // ─────────────────────────────────────
+    // Load available time slots
+    // ─────────────────────────────────────
+    async function loadSlots() {
+      const doctorId = document.getElementById('doctorSelect').value;
+      const date = document.getElementById('dateInput').value;
+
+      if (!doctorId || !date) return;
+
+      try {
+        const data = await api.get(`/api/appointments/slots/${doctorId}/${date}`);
+
+        document.getElementById('slotsSection').style.display = 'block';
+
+        const grid = document.getElementById('slotGrid');
+
+        if (data.availableSlots.length === 0) {
+          grid.innerHTML = '<p style="color:var(--text-light); font-size:0.9rem;">No slots available on this date.</p>';
+          return;
+        }
+
+        // Render slot buttons
+        grid.innerHTML = [
+          ...data.availableSlots.map(slot => `
+            <button class="slot-btn" onclick="selectSlot(this, '${slot}')">${slot}</button>
+          `),
+          ...data.bookedSlots.map(slot => `
+            <button class="slot-btn booked" disabled>${slot}<br><small>Booked</small></button>
+          `)
+        ].join('');
+
+      } catch (err) {
+        showAlert('alert', 'Error loading slots', 'error');
+      }
+    }
+
+    // ─────────────────────────────────────
+    // Select a time slot
+    // ─────────────────────────────────────
+    function selectSlot(btn, slot) {
+      // Remove selection from all buttons
+      document.querySelectorAll('.slot-btn:not(.booked)').forEach(b => {
+        b.classList.remove('selected');
+      });
+
+      // Mark this one as selected
+      btn.classList.add('selected');
+      selectedSlot = slot;
+
+      // Show selected slot
+      document.getElementById('selectedSlotText').textContent = slot;
+      document.getElementById('selectedSlotDisplay').style.display = 'block';
+
+      // Enable book button
+      document.getElementById('bookBtn').disabled = false;
+    }
+
+    // ─────────────────────────────────────
+    // Book the appointment
+    // ─────────────────────────────────────
+    async function bookAppointment() {
+      const doctorId = document.getElementById('doctorSelect').value;
+      const date = document.getElementById('dateInput').value;
+      const reason = document.getElementById('reason').value.trim() || 'General Consultation';
+
+      if (!doctorId || !date || !selectedSlot) {
+        return showAlert('alert', 'Please select a doctor, date, and time slot', 'error');
+      }
+
+      const btn = document.getElementById('bookBtn');
+      btn.disabled = true;
+      btn.textContent = 'Booking...';
+
+      try {
+        await api.post('/api/appointments', {
+          doctorId,
+          date,
+          timeSlot: selectedSlot,
+          reason
+        });
+
+        showAlert('alert', '✅ Appointment booked successfully!', 'success');
+
+        // Go to dashboard after 1.5 seconds
+        setTimeout(() => window.location.href = '/dashboard', 1500);
+
+      } catch (err) {
+        showAlert('alert', err.message, 'error');
+        btn.disabled = false;
+        btn.textContent = 'Confirm Booking';
+      }
+    }
+  </script>
+</body>
+</html>
