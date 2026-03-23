@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register - MediBook</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body style="background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%); min-height:100vh;">
+
+  <div class="auth-wrapper">
+    <div class="auth-box">
+      <a href="/" style="text-decoration:none;font-size:1.4rem;font-weight:700;color:#2563eb;">Medi<span style="color:#10b981;">Book</span></a>
+
+      <h2 style="margin-top:20px;">Create Account</h2>
+      <p class="subtitle">Join MediBook to book appointments easily</p>
+
+      <div id="alert" class="alert"></div>
+
+      <div class="form-group">
+        <label for="name">Full Name</label>
+        <input type="text" id="name" placeholder="John Doe" />
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" placeholder="you@example.com" />
+      </div>
+
+      <div class="form-group">
+        <label for="phone">Phone Number</label>
+        <input type="tel" id="phone" placeholder="+91 9876543210" />
+      </div>
+
+      <div class="form-group">
+        <label for="role">I am a...</label>
+        <select id="role" onchange="toggleSpecialization()">
+          <option value="patient">Patient</option>
+          <option value="doctor">Doctor</option>
+        </select>
+      </div>
+
+      <!-- Only shows if Doctor is selected -->
+      <div class="form-group" id="specGroup" style="display:none;">
+        <label for="specialization">Specialization</label>
+        <input type="text" id="specialization" placeholder="e.g. Cardiologist, General Physician" />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="Minimum 6 characters" />
+      </div>
+
+      <button class="btn btn-primary" style="width:100%;" id="registerBtn" onclick="handleRegister()">
+        Create Account
+      </button>
+
+      <p style="text-align:center; margin-top:20px; color:var(--text-light); font-size:0.9rem;">
+        Already have an account? <a href="/login" style="color:var(--primary); font-weight:600;">Login</a>
+      </p>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    function toggleSpecialization() {
+      const role = document.getElementById('role').value;
+      document.getElementById('specGroup').style.display =
+        role === 'doctor' ? 'block' : 'none';
+    }
+
+    async function handleRegister() {
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const role = document.getElementById('role').value;
+      const specialization = document.getElementById('specialization').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (!name || !email || !password) {
+        return showAlert('alert', 'Name, email, and password are required', 'error');
+      }
+
+      if (password.length < 6) {
+        return showAlert('alert', 'Password must be at least 6 characters', 'error');
+      }
+
+      const btn = document.getElementById('registerBtn');
+      btn.disabled = true;
+      btn.textContent = 'Creating account...';
+
+      try {
+        const data = await api.post('/api/auth/register', {
+          name, email, phone, role, specialization, password
+        });
+
+        showAlert('alert', 'Account created! Redirecting...', 'success');
+        setTimeout(() => window.location.href = '/dashboard', 1200);
+
+      } catch (err) {
+        showAlert('alert', err.message, 'error');
+        btn.disabled = false;
+        btn.textContent = 'Create Account';
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - MediBook</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a href="/" class="navbar-brand">Medi<span>Book</span></a>
+    <div class="navbar-links" style="display:flex; align-items:center; gap:16px;">
+      <span id="welcomeMsg" style="color:var(--text-light); font-size:0.9rem;"></span>
+      <a href="/book" class="btn btn-primary btn-sm">+ Book Appointment</a>
+      <a href="#" onclick="logout()" style="color:var(--danger);">Logout</a>
+    </div>
+  </nav>
+
+  <div class="page-wrapper">
+    <div id="alert" class="alert"></div>
+
+    <!-- STATS ROW -->
+    <div class="grid-3" style="margin-bottom:32px;">
+      <div class="stat-card">
+        <div class="stat-number" id="totalCount">—</div>
+        <div class="stat-label">Total Appointments</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" style="color:var(--warning);" id="pendingCount">—</div>
+        <div class="stat-label">Pending</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" style="color:var(--secondary);" id="confirmedCount">—</div>
+        <div class="stat-label">Confirmed</div>
+      </div>
+    </div>
+
+    <!-- APPOINTMENTS TABLE -->
+    <div class="card">
+      <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+        <span>My Appointments</span>
+        <a href="/book" class="btn btn-primary btn-sm">New Appointment</a>
+      </div>
+
+      <div id="loadingSpinner" class="spinner"></div>
+
+      <div class="table-container" id="tableContainer" style="display:none;">
+        <table>
+          <thead>
+            <tr>
+              <th>Doctor</th>
+              <th>Specialization</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Reason</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="appointmentsTable">
+            <!-- Rows inserted here by JavaScript -->
+          </tbody>
+        </table>
+      </div>
+
+      <div id="emptyState" style="display:none; text-align:center; padding:40px; color:var(--text-light);">
+        <div style="font-size:3rem;">📋</div>
+        <p style="margin-top:12px;">No appointments yet.</p>
+        <a href="/book" class="btn btn-primary" style="margin-top:16px;">Book Your First Appointment</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESCHEDULE MODAL -->
+  <div id="rescheduleModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:white; border-radius:16px; padding:32px; width:90%; max-width:440px;">
+      <h3 style="margin-bottom:20px;">Reschedule Appointment</h3>
+
+      <div class="form-group">
+        <label>New Date</label>
+        <input type="date" id="rescheduleDate" />
+      </div>
+
+      <div class="form-group">
+        <label>New Time Slot</label>
+        <select id="rescheduleSlot">
+          <option value="">Select time slot</option>
+        </select>
+      </div>
+
+      <div style="display:flex; gap:12px; margin-top:8px;">
+        <button class="btn btn-primary" onclick="confirmReschedule()" style="flex:1">Confirm</button>
+        <button class="btn btn-secondary" onclick="closeModal()" style="flex:1">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    let currentAppointmentId = null;
+    let currentDoctorId = null;
+
+    // ─────────────────────────────────────
+    // On page load
+    // ─────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Check login, get user info
+      const user = await requireAuth();
+      document.getElementById('welcomeMsg').textContent = `Hello, ${user.name}`;
+
+      // Load appointments
+      loadAppointments();
+    });
+
+    // ─────────────────────────────────────
+    // Fetch & display appointments
+    // ─────────────────────────────────────
+    async function loadAppointments() {
+      try {
+        const appointments = await api.get('/api/appointments');
+
+        // Update stats
+        document.getElementById('totalCount').textContent = appointments.length;
+        document.getElementById('pendingCount').textContent =
+          appointments.filter(a => a.status === 'pending').length;
+        document.getElementById('confirmedCount').textContent =
+          appointments.filter(a => a.status === 'confirmed').length;
+
+        // Hide spinner
+        document.getElementById('loadingSpinner').style.display = 'none';
+
+        if (appointments.length === 0) {
+          document.getElementById('emptyState').style.display = 'block';
+          return;
+        }
+
+        document.getElementById('tableContainer').style.display = 'block';
+
+        // Build table rows
+        const tbody = document.getElementById('appointmentsTable');
+        tbody.innerHTML = appointments.map(appt => `
+          <tr>
+            <td><strong>${appt.doctor?.name || 'N/A'}</strong></td>
+            <td>${appt.doctor?.specialization || '—'}</td>
+            <td>${formatDate(appt.date)}</td>
+            <td>${appt.timeSlot}</td>
+            <td>${appt.reason}</td>
+            <td>${statusBadge(appt.status)}</td>
+            <td>
+              ${appt.status !== 'cancelled' && appt.status !== 'completed' ? `
+                <button class="btn btn-warning btn-sm"
+                  onclick="openReschedule('${appt._id}', '${appt.doctor?._id}')">
+                  Reschedule
+                </button>
+                <button class="btn btn-danger btn-sm" style="margin-left:6px;"
+                  onclick="cancelAppt('${appt._id}')">
+                  Cancel
+                </button>
+              ` : '—'}
+            </td>
+          </tr>
+        `).join('');
+
+      } catch (err) {
+        document.getElementById('loadingSpinner').style.display = 'none';
+        showAlert('alert', 'Error loading appointments: ' + err.message, 'error');
+      }
+    }
+
+    // ─────────────────────────────────────
+    // Cancel Appointment
+    // ─────────────────────────────────────
+    async function cancelAppt(id) {
+      if (!confirm('Are you sure you want to cancel this appointment?')) return;
+
+      try {
+        await api.delete(`/api/appointments/${id}`);
+        showAlert('alert', 'Appointment cancelled successfully', 'success');
+        loadAppointments(); // reload the list
+      } catch (err) {
+        showAlert('alert', err.message, 'error');
+      }
+    }
+
+    // ─────────────────────────────────────
+    // Reschedule Modal
+    // ─────────────────────────────────────
+    function openReschedule(appointmentId, doctorId) {
+      currentAppointmentId = appointmentId;
+      currentDoctorId = doctorId;
+
+      // Set minimum date to today
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('rescheduleDate').min = today;
+
+      document.getElementById('rescheduleModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('rescheduleModal').style.display = 'none';
+      currentAppointmentId = null;
+      currentDoctorId = null;
+    }
+
+    // Load available slots when date changes
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('rescheduleDate')?.addEventListener('change', async (e) => {
+        if (!currentDoctorId) return;
+
+        const date = e.target.value;
+        const data = await api.get(`/api/appointments/slots/${currentDoctorId}/${date}`);
+
+        const select = document.getElementById('rescheduleSlot');
+        select.innerHTML = '<option value="">Select time slot</option>' +
+          data.availableSlots.map(slot =>
+            `<option value="${slot}">${slot}</option>`
+          ).join('');
+      });
+    });
+
+    async function confirmReschedule() {
+      const date = document.getElementById('rescheduleDate').value;
+      const timeSlot = document.getElementById('rescheduleSlot').value;
+
+      if (!date || !timeSlot) {
+        return alert('Please select both date and time slot');
+      }
+
+      try {
+        await api.put(`/api/appointments/${currentAppointmentId}`, { date, timeSlot });
+        showAlert('alert', 'Appointment rescheduled successfully', 'success');
+        closeModal();
+        loadAppointments();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+  </script>
+</body>
+</html>
