@@ -3,17 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard - MediBook</title>
+  <title>Dashboard - Hospital Appointment System</title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 
   <!-- NAVBAR -->
   <nav class="navbar">
-    <a href="/" class="navbar-brand">Medi<span>Book</span></a>
+    <a href="/" class="navbar-brand">Hospital <span>Appointment System</span></a>
     <div class="navbar-links" style="display:flex; align-items:center; gap:16px;">
+      <span id="roleBadge" style="font-size:0.78rem; font-weight:600; padding:3px 10px; border-radius:20px; background:#e0f2fe; color:#0369a1;"></span>
       <span id="welcomeMsg" style="color:var(--text-light); font-size:0.9rem;"></span>
-      <a href="/book" class="btn btn-primary btn-sm">+ Book Appointment</a>
+      <a href="/help" style="color:var(--text-light); font-size:0.85rem;">Help</a>
+      <a id="bookBtn" href="/book" class="btn btn-primary btn-sm">+ Book Appointment</a>
       <a href="#" onclick="logout()" style="color:var(--danger);">Logout</a>
     </div>
   </nav>
@@ -40,8 +42,8 @@
     <!-- APPOINTMENTS TABLE -->
     <div class="card">
       <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
-        <span>My Appointments</span>
-        <a href="/book" class="btn btn-primary btn-sm">New Appointment</a>
+        <span id="tableTitle">My Appointments</span>
+        <a href="/book" id="newApptBtn" class="btn btn-primary btn-sm">New Appointment</a>
       </div>
 
       <div id="loadingSpinner" class="spinner"></div>
@@ -50,8 +52,8 @@
         <table>
           <thead>
             <tr>
-              <th>Doctor</th>
-              <th>Specialization</th>
+              <th id="colPersonHeader">Doctor</th>
+              <th>Specialization / Role</th>
               <th>Date</th>
               <th>Time</th>
               <th>Reason</th>
@@ -67,13 +69,13 @@
 
       <div id="emptyState" style="display:none; text-align:center; padding:40px; color:var(--text-light);">
         <div style="font-size:3rem;">📋</div>
-        <p style="margin-top:12px;">No appointments yet.</p>
-        <a href="/book" class="btn btn-primary" style="margin-top:16px;">Book Your First Appointment</a>
+        <p style="margin-top:12px;" id="emptyMsg">No appointments yet.</p>
+        <a href="/book" id="emptyBookBtn" class="btn btn-primary" style="margin-top:16px;">Book Your First Appointment</a>
       </div>
     </div>
   </div>
 
-  <!-- RESCHEDULE MODAL -->
+  <!-- RESCHEDULE MODAL (patients only) -->
   <div id="rescheduleModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
     <div style="background:white; border-radius:16px; padding:32px; width:90%; max-width:440px;">
       <h3 style="margin-bottom:20px;">Reschedule Appointment</h3>
@@ -101,16 +103,28 @@
   <script>
     let currentAppointmentId = null;
     let currentDoctorId = null;
+    let currentUserRole = null;
 
     // ─────────────────────────────────────
     // On page load
     // ─────────────────────────────────────
     document.addEventListener('DOMContentLoaded', async () => {
-      // Check login, get user info
       const user = await requireAuth();
-      document.getElementById('welcomeMsg').textContent = `Hello, ${user.name}`;
+      currentUserRole = user.role;
 
-      // Load appointments
+      document.getElementById('welcomeMsg').textContent = `Hello, ${user.name}`;
+      document.getElementById('roleBadge').textContent = user.role === 'doctor' ? '👨‍⚕️ Doctor' : '🧑 Patient';
+
+      // Doctors don't book appointments — hide booking controls
+      if (user.role === 'doctor') {
+        document.getElementById('bookBtn').style.display = 'none';
+        document.getElementById('newApptBtn').style.display = 'none';
+        document.getElementById('tableTitle').textContent = 'Patient Appointments';
+        document.getElementById('colPersonHeader').textContent = 'Patient';
+        document.getElementById('emptyMsg').textContent = 'No appointments assigned to you yet.';
+        document.getElementById('emptyBookBtn').style.display = 'none';
+      }
+
       loadAppointments();
     });
 
@@ -121,14 +135,12 @@
       try {
         const appointments = await api.get('/api/appointments');
 
-        // Update stats
         document.getElementById('totalCount').textContent = appointments.length;
         document.getElementById('pendingCount').textContent =
           appointments.filter(a => a.status === 'pending').length;
         document.getElementById('confirmedCount').textContent =
           appointments.filter(a => a.status === 'confirmed').length;
 
-        // Hide spinner
         document.getElementById('loadingSpinner').style.display = 'none';
 
         if (appointments.length === 0) {
@@ -138,30 +150,63 @@
 
         document.getElementById('tableContainer').style.display = 'block';
 
-        // Build table rows
         const tbody = document.getElementById('appointmentsTable');
-        tbody.innerHTML = appointments.map(appt => `
-          <tr>
-            <td><strong>${appt.doctor?.name || 'N/A'}</strong></td>
-            <td>${appt.doctor?.specialization || '—'}</td>
-            <td>${formatDate(appt.date)}</td>
-            <td>${appt.timeSlot}</td>
-            <td>${appt.reason}</td>
-            <td>${statusBadge(appt.status)}</td>
-            <td>
-              ${appt.status !== 'cancelled' && appt.status !== 'completed' ? `
-                <button class="btn btn-warning btn-sm"
-                  onclick="openReschedule('${appt._id}', '${appt.doctor?._id}')">
-                  Reschedule
-                </button>
-                <button class="btn btn-danger btn-sm" style="margin-left:6px;"
-                  onclick="cancelAppt('${appt._id}')">
-                  Cancel
-                </button>
-              ` : '—'}
-            </td>
-          </tr>
-        `).join('');
+
+        if (currentUserRole === 'doctor') {
+          // ── DOCTOR VIEW ──────────────────────────────
+          tbody.innerHTML = appointments.map(appt => `
+            <tr>
+              <td><strong>${appt.patient?.name || 'N/A'}</strong></td>
+              <td style="color:var(--text-light); font-size:0.85rem;">${appt.patient?.phone || '—'}</td>
+              <td>${formatDate(appt.date)}</td>
+              <td>${appt.timeSlot}</td>
+              <td>${appt.reason}</td>
+              <td>${statusBadge(appt.status)}</td>
+              <td>
+                ${appt.status === 'pending' ? `
+                  <button class="btn btn-sm" style="background:#dcfce7;color:#166534;border:1px solid #bbf7d0;"
+                    onclick="updateStatus('${appt._id}', 'confirmed')">
+                    ✓ Approve
+                  </button>
+                  <button class="btn btn-sm" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5; margin-left:6px;"
+                    onclick="updateStatus('${appt._id}', 'cancelled')">
+                    ✗ Reject
+                  </button>
+                ` : appt.status === 'confirmed' ? `
+                  <button class="btn btn-sm" style="background:#fef9c3;color:#713f12;border:1px solid #fde68a;"
+                    onclick="updateStatus('${appt._id}', 'completed')">
+                    Mark Completed
+                  </button>
+                ` : '<span style="color:var(--text-light);font-size:0.85rem;">—</span>'}
+              </td>
+            </tr>
+          `).join('');
+
+        } else {
+          // ── PATIENT VIEW ─────────────────────────────
+          tbody.innerHTML = appointments.map(appt => `
+            <tr>
+              <td><strong>${appt.doctor?.name || 'N/A'}</strong></td>
+              <td>${appt.doctor?.specialization || '—'}</td>
+              <td>${formatDate(appt.date)}</td>
+              <td>${appt.timeSlot}</td>
+              <td>${appt.reason}</td>
+              <td>${statusBadge(appt.status)}</td>
+              <td>
+                ${appt.status !== 'cancelled' && appt.status !== 'completed' ? `
+                  <button class="btn btn-warning btn-sm"
+                    onclick="openReschedule('${appt._id}', '${appt.doctor?._id}')">
+                    Reschedule
+                  </button>
+                  <button class="btn btn-danger btn-sm" style="margin-left:6px;"
+                    onclick="cancelAppt('${appt._id}')">
+                    Cancel
+                  </button>
+                ` : '—'}
+              </td>
+            </tr>
+          `).join('');
+        }
 
       } catch (err) {
         document.getElementById('loadingSpinner').style.display = 'none';
@@ -170,7 +215,24 @@
     }
 
     // ─────────────────────────────────────
-    // Cancel Appointment
+    // Doctor: Update Status (Approve / Reject / Complete)
+    // ─────────────────────────────────────
+    async function updateStatus(id, status) {
+      const labels = { confirmed: 'approve', cancelled: 'reject', completed: 'mark as completed' };
+      if (!confirm(`Are you sure you want to ${labels[status] || 'update'} this appointment?`)) return;
+
+      try {
+        await api.put(`/api/appointments/${id}/status`, { status });
+        const msgs = { confirmed: 'Appointment approved!', cancelled: 'Appointment rejected.', completed: 'Appointment marked as completed.' };
+        showAlert('alert', msgs[status] || 'Status updated.', 'success');
+        loadAppointments();
+      } catch (err) {
+        showAlert('alert', err.message, 'error');
+      }
+    }
+
+    // ─────────────────────────────────────
+    // Patient: Cancel
     // ─────────────────────────────────────
     async function cancelAppt(id) {
       if (!confirm('Are you sure you want to cancel this appointment?')) return;
@@ -178,23 +240,21 @@
       try {
         await api.delete(`/api/appointments/${id}`);
         showAlert('alert', 'Appointment cancelled successfully', 'success');
-        loadAppointments(); // reload the list
+        loadAppointments();
       } catch (err) {
         showAlert('alert', err.message, 'error');
       }
     }
 
     // ─────────────────────────────────────
-    // Reschedule Modal
+    // Patient: Reschedule Modal
     // ─────────────────────────────────────
     function openReschedule(appointmentId, doctorId) {
       currentAppointmentId = appointmentId;
       currentDoctorId = doctorId;
 
-      // Set minimum date to today
       const today = new Date().toISOString().split('T')[0];
       document.getElementById('rescheduleDate').min = today;
-
       document.getElementById('rescheduleModal').style.display = 'flex';
     }
 
@@ -204,7 +264,6 @@
       currentDoctorId = null;
     }
 
-    // Load available slots when date changes
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('rescheduleDate')?.addEventListener('change', async (e) => {
         if (!currentDoctorId) return;

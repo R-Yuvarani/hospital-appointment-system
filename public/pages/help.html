@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Help - Hospital Appointment System</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a href="/" class="navbar-brand">Hospital <span>Appointment System</span></a>
+    <div class="navbar-links" style="display:flex; align-items:center; gap:16px;">
+      <a href="/login" class="btn btn-primary btn-sm">Login</a>
+    </div>
+  </nav>
+
+  <div class="page-wrapper">
+    <h2 style="margin-bottom:8px;">Help &amp; Documentation</h2>
+    <p style="color:var(--text-light); margin-bottom:32px;">Everything you need to get started with the Hospital Appointment System.</p>
+
+    <!-- TEST CREDENTIALS -->
+    <div class="card" style="margin-bottom:28px; border-left: 4px solid var(--primary);">
+      <div class="card-header">🔑 Test Login Credentials</div>
+      <p style="color:var(--text-light); margin-bottom:20px; font-size:0.9rem;">
+        Use the following accounts to explore the system. Run <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">node seed.js</code> to create them in the database.
+      </p>
+
+      <div class="grid-3" style="gap:16px;">
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:18px;">
+          <div style="font-size:1.5rem; margin-bottom:8px;">🧑‍⚕️</div>
+          <strong style="color:#166534;">Patient Account</strong>
+          <div style="margin-top:10px; font-size:0.88rem; color:#374151;">
+            <div style="margin-bottom:4px;"><strong>Email:</strong> hari09111999@gmail.com</div>
+            <div><strong>Password:</strong> password</div>
+          </div>
+        </div>
+
+        <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:18px;">
+          <div style="font-size:1.5rem; margin-bottom:8px;">👨‍⚕️</div>
+          <strong style="color:#1e40af;">Doctor Account</strong>
+          <div style="margin-top:10px; font-size:0.88rem; color:#374151;">
+            <div style="margin-bottom:4px;"><strong>Email:</strong> yuvarani2906@gmail.com</div>
+            <div><strong>Password:</strong> password</div>
+          </div>
+        </div>
+
+        <div style="background:#fefce8; border:1px solid #fde68a; border-radius:10px; padding:18px;">
+          <div style="font-size:1.5rem; margin-bottom:8px;">👩‍⚕️</div>
+          <strong style="color:#92400e;">More Doctors</strong>
+          <div style="margin-top:10px; font-size:0.88rem; color:#374151;">
+            <div style="margin-bottom:4px;"><strong>Email:</strong> monisha@gmail.com</div>
+            <div style="margin-bottom:4px;"><strong>Email:</strong> roshan@gamil.com</div>
+            <div><strong>Password:</strong> password</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px; padding:12px 16px; background:#fef9c3; border-radius:8px; font-size:0.85rem; color:#713f12;">
+        ⚠️ These are test accounts for development purposes only. Do not use real credentials in a production environment.
+      </div>
+    </div>
+
+    <!-- HOW ROLES WORK -->
+    <div class="card" style="margin-bottom:28px;">
+      <div class="card-header">👥 User Roles &amp; Permissions</div>
+
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th>Patient</th>
+              <th>Doctor</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Book an appointment</td>
+              <td>✅ Yes</td>
+              <td>❌ No</td>
+            </tr>
+            <tr>
+              <td>View own appointments</td>
+              <td>✅ Yes</td>
+              <td>✅ Yes (as doctor)</td>
+            </tr>
+            <tr>
+              <td>Approve / Reject appointments</td>
+              <td>❌ No</td>
+              <td>✅ Yes</td>
+            </tr>
+            <tr>
+              <td>Reschedule appointment</td>
+              <td>✅ Yes</td>
+              <td>❌ No</td>
+            </tr>
+            <tr>
+              <td>Cancel appointment</td>
+              <td>✅ Yes</td>
+              <td>❌ No</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- FAQ -->
+    <div class="card" style="margin-bottom:28px;">
+      <div class="card-header">❓ Frequently Asked Questions</div>
+
+      <div style="margin-bottom:20px;">
+        <strong>How do I book an appointment?</strong>
+        <p style="color:var(--text-light); margin-top:6px; font-size:0.9rem;">
+          Log in as a patient, click "Book Appointment", select a doctor, choose a date and available time slot, and submit.
+        </p>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <strong>How does the doctor approve or reject an appointment?</strong>
+        <p style="color:var(--text-light); margin-top:6px; font-size:0.9rem;">
+          Doctors see all incoming appointments on their dashboard. Each pending appointment has an <em>Approve</em> and <em>Reject</em> button. Clicking either will update the status, which the patient can see on their own dashboard.
+        </p>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <strong>Can a patient approve or reject?</strong>
+        <p style="color:var(--text-light); margin-top:6px; font-size:0.9rem;">
+          No. Only doctors have the authority to approve or reject appointments. Patients can only view the status, reschedule, or cancel.
+        </p>
+      </div>
+
+      <div>
+        <strong>How do I set up the project locally?</strong>
+        <p style="color:var(--text-light); margin-top:6px; font-size:0.9rem;">
+          Copy <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">.env.example</code> to <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">.env</code>, fill in your MongoDB URI and session secret, run <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">npm install</code>, then <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">node seed.js</code> to seed test data, and finally <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">npm run dev</code>.
+        </p>
+      </div>
+    </div>
+
+    <div style="text-align:center; margin-top:12px;">
+      <a href="/login" class="btn btn-primary">Go to Login</a>
+    </div>
+  </div>
+
+  <footer style="text-align:center;padding:28px;color:var(--text-light);font-size:0.9rem;">
+    &copy; 2024 Hospital Appointment System
+  </footer>
+
+</body>
+</html>

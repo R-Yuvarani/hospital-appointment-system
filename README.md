@@ -1,7 +1,7 @@
-# 🏥 MediBook — Hospital Appointment System
+# 🏥 Hospital Appointment System
 
-A beginner-friendly, full-stack web application for booking hospital appointments online.
-Built with **Node.js**, **Express**, **MongoDB**, and vanilla **HTML/CSS/JavaScript**.
+A full-stack web application for booking hospital appointments online.
+Built with **Node.js**, **Express**, **MongoDB**, and vanilla **HTML/CSS/JavaScript** — deployed on **Vercel**.
 
 ---
 
@@ -10,11 +10,11 @@ Built with **Node.js**, **Express**, **MongoDB**, and vanilla **HTML/CSS/JavaScr
 1. [Project Overview](#project-overview)
 2. [Tech Stack](#tech-stack)
 3. [Folder Structure](#folder-structure)
-4. [Step-by-Step Installation](#step-by-step-installation)
+4. [Local Installation](#local-installation)
 5. [Running the Project](#running-the-project)
 6. [How the Code Works](#how-the-code-works)
 7. [API Endpoints Reference](#api-endpoints-reference)
-8. [Deploying for Free](#deploying-for-free)
+8. [Deploying to Vercel](#deploying-to-vercel)
 9. [Common Errors & Fixes](#common-errors--fixes)
 
 ---
@@ -25,18 +25,20 @@ Built with **Node.js**, **Express**, **MongoDB**, and vanilla **HTML/CSS/JavaScr
 
 **Solution:** An online platform where:
 - 🧑‍⚕️ **Patients** register, browse doctors, pick a time slot, and book appointments
-- 👨‍⚕️ **Doctors** view their schedule and manage appointment statuses
+- 👨‍⚕️ **Doctors** review bookings and approve or reject them in real time
 - 🔐 Sessions keep users securely logged in
 
 ### Features
+
 | Feature | Description |
 |---|---|
-| Register / Login | Secure accounts with hashed passwords |
+| Register / Login | Secure accounts with hashed passwords (bcrypt) |
 | Book Appointment | Pick doctor, date, and available time slot |
-| Reschedule | Change date/time of existing appointment |
-| Cancel | Mark appointment as cancelled |
-| Dashboard | View all appointments with live status |
-| Role-based access | Patients and doctors see different views |
+| Doctor Approval | Doctors approve or reject pending appointments |
+| Reschedule | Patients can change date/time of pending appointments |
+| Cancel | Patients can cancel non-completed appointments |
+| Dashboard | Role-aware view — patients see status; doctors see action buttons |
+| Help Page | `/help` page with test credentials and role documentation |
 
 ---
 
@@ -48,7 +50,7 @@ Built with **Node.js**, **Express**, **MongoDB**, and vanilla **HTML/CSS/JavaScr
 | Backend | Node.js + Express | Fast, beginner-friendly server |
 | Database | MongoDB + Mongoose | Flexible, JSON-like data |
 | Auth | express-session + bcryptjs | Session login, encrypted passwords |
-| Deploy | Render.com (free) + MongoDB Atlas (free) | No credit card needed |
+| Deploy | **Vercel** (free) + MongoDB Atlas (free) | Zero config, GitHub integration |
 
 ---
 
@@ -57,8 +59,11 @@ Built with **Node.js**, **Express**, **MongoDB**, and vanilla **HTML/CSS/JavaScr
 ```
 hospital-appointment-system/
 │
-├── server.js              ← Entry point. Run this to start the app
+├── api/
+│   └── index.js           ← Vercel serverless entry point
+├── server.js              ← Local dev entry point
 ├── package.json           ← Lists all dependencies
+├── vercel.json            ← Vercel routing config
 ├── .env                   ← Secret config (never commit this!)
 ├── .env.example           ← Template for .env
 ├── .gitignore             ← Files Git should ignore
@@ -78,7 +83,7 @@ hospital-appointment-system/
 │   └── auth.js            ← Protect routes (must be logged in)
 │
 └── public/                ← All frontend files (served as-is)
-    ├── index.html         ← Homepage
+    ├── index.html         ← Landing page
     ├── css/
     │   └── style.css      ← All styling
     ├── js/
@@ -87,175 +92,112 @@ hospital-appointment-system/
         ├── login.html     ← Login page
         ├── register.html  ← Register page
         ├── dashboard.html ← User dashboard
-        └── book.html      ← Book appointment page
+        ├── book.html      ← Book appointment page
+        └── help.html      ← Help & test credentials
 ```
 
 ---
 
-## Step-by-Step Installation
+## Local Installation
 
-Follow every step in order. Do not skip any step.
+Follow every step in order.
 
 ---
 
 ### STEP 1 — Install Node.js
 
-Node.js lets you run JavaScript on your computer (outside the browser).
-
 1. Go to: https://nodejs.org
-2. Download the **LTS version** (e.g. v20.x.x)
-3. Run the installer. Click Next → Next → Install
-4. **Verify it installed correctly:**
+2. Download the **LTS version** (v20.x.x recommended)
+3. Run the installer
+4. Verify:
 
 ```bash
-node --version
-# Should print: v20.x.x
-
-npm --version
-# Should print: 10.x.x
+node --version   # v20.x.x
+npm --version    # 10.x.x
 ```
-
-> ⚠️ If you get "command not found", restart your terminal and try again.
 
 ---
 
-### STEP 2 — Install MongoDB (Local)
+### STEP 2 — Set Up MongoDB Atlas (Free Cloud DB)
 
-MongoDB is the database that stores all your data.
+Vercel is a serverless platform — it cannot run a local MongoDB. Use **MongoDB Atlas** (free forever).
 
-#### Option A: Install Locally (for development)
-
-1. Go to: https://www.mongodb.com/try/download/community
-2. Select your OS → Download and install
-3. Start MongoDB:
-
-```bash
-# On Mac/Linux:
-mongod --dbpath ~/data/db
-
-# On Windows (run as Administrator):
-net start MongoDB
-```
-
-4. Verify MongoDB is running:
-
-```bash
-mongosh
-# You should see a > prompt. Type exit to quit.
-```
-
-#### Option B: Use MongoDB Atlas (Free Cloud — Recommended for beginners)
-
-1. Go to: https://www.mongodb.com/atlas
-2. Click **Try Free** → Create account
-3. Create a **Free Cluster** (M0 Sandbox)
-4. Click **Connect** → **Connect your application**
-5. Copy the connection string — it looks like:
+1. Go to: https://www.mongodb.com/atlas → Sign up free
+2. Create a **Free M0 cluster** (choose any region)
+3. Under **Database Access** → Add a database user with username + password
+4. Under **Network Access** → Add IP: `0.0.0.0/0` *(allows all IPs — required for Vercel)*
+5. Click **Connect** → **Drivers** → Copy your connection string:
    ```
-   mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/hospital_db
+   mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/hospital_db?retryWrites=true&w=majority
    ```
-6. Use this as your `MONGODB_URI` in the `.env` file (Step 5)
+   Replace `<username>` and `<password>` with your database user credentials.
 
 ---
 
 ### STEP 3 — Install Git
 
-Git tracks your code changes and lets you push to GitHub for deployment.
-
-1. Go to: https://git-scm.com/downloads
-2. Download and install for your OS
-3. Verify:
-
 ```bash
-git --version
-# Should print: git version 2.x.x
-```
+# Verify after install
+git --version   # git version 2.x.x
 
-4. Set up your identity (one-time):
-
-```bash
+# Set up your identity (one-time)
 git config --global user.name "Your Name"
 git config --global user.email "your@email.com"
 ```
 
 ---
 
-### STEP 4 — Download the Project
+### STEP 4 — Clone and Install
 
 ```bash
-# Clone from GitHub (after you push it there)
 git clone https://github.com/YOUR_USERNAME/hospital-appointment-system.git
-
-# Go into the project folder
 cd hospital-appointment-system
-
-# Install all Node.js packages listed in package.json
 npm install
 ```
-
-> `npm install` reads `package.json` and downloads Express, Mongoose, etc. into `node_modules/`.
 
 ---
 
 ### STEP 5 — Create Your .env File
 
-The `.env` file holds secret configuration. It is **never** pushed to GitHub.
-
 ```bash
-# Copy the template
 cp .env.example .env
 ```
 
-Now open `.env` in any text editor and fill it in:
+Open `.env` and fill it in:
 
 ```env
 PORT=3000
-MONGODB_URI=mongodb://localhost:27017/hospital_db
+MONGODB_URI=mongodb+srv://youruser:yourpass@cluster0.abc123.mongodb.net/hospital_db
 SESSION_SECRET=change-this-to-any-long-random-string-abc123xyz
 NODE_ENV=development
 ```
 
-> For MongoDB Atlas, replace `MONGODB_URI` with your Atlas connection string from Step 2.
+> ⚠️ Never commit `.env` to GitHub. It is already in `.gitignore`.
 
 ---
 
-### STEP 6 — Add Sample Data (Optional but Recommended)
-
-Create a file called `seed.js` in the project root:
-
-```javascript
-// seed.js — Run once to add test data
-require('dotenv').config();
-const mongoose = require('mongoose');
-const User = require('./models/User');
-const connectDB = require('./config/db');
-
-connectDB().then(async () => {
-  await User.deleteMany({}); // clear existing users
-
-  await User.create([
-    { name: 'Alice Patient', email: 'patient@test.com', password: 'password123', role: 'patient', phone: '9876543210' },
-    { name: 'Dr. Smith', email: 'doctor@test.com', password: 'password123', role: 'doctor', specialization: 'General Physician', phone: '9876543211' },
-    { name: 'Dr. Priya', email: 'priya@test.com', password: 'password123', role: 'doctor', specialization: 'Cardiologist', phone: '9876543212' },
-  ]);
-
-  console.log('✅ Seed data inserted!');
-  process.exit();
-});
-```
-
-Run it once:
+### STEP 6 — Seed Test Data
 
 ```bash
 node seed.js
-# Output: ✅ Seed data inserted!
 ```
+
+This creates 4 test accounts in your database:
+
+| Role | Email | Password |
+|------|-------|----------|
+| Patient | patient@test.com | password123 |
+| Doctor | doctor@test.com | password123 |
+| Doctor | priya@test.com | password123 |
+| Doctor | raj@test.com | password123 |
+
+> These credentials are also visible on the `/help` page of the running app.
 
 ---
 
 ## Running the Project
 
-### Development Mode (with auto-restart)
+### Development Mode (auto-restart on file changes)
 
 ```bash
 npm run dev
@@ -267,74 +209,68 @@ npm run dev
 npm start
 ```
 
-Open your browser and go to: **http://localhost:3000**
-
-You should see the MediBook homepage.
+Open: **http://localhost:3000**
 
 ---
 
 ## How the Code Works
 
-### Understanding the Request Flow
-
-Every time a user does something (clicks a button, submits a form), this happens:
+### Request Flow
 
 ```
-Browser                  Server (server.js)              Database (MongoDB)
+Browser                  Express (server.js)             MongoDB Atlas
    │                           │                               │
    │  POST /api/auth/login      │                               │
    │ ─────────────────────────► │                               │
    │                           │  User.findOne({ email })      │
    │                           │ ─────────────────────────────► │
    │                           │ ◄───────────────────────────── │
-   │                           │  Check password hash          │
-   │                           │  Save session                 │
+   │                           │  bcrypt.compare(password)     │
+   │                           │  req.session.userId = id      │
    │ ◄───────────────────────── │                               │
    │  { user: { name, role } }  │                               │
 ```
 
-### Key Concepts Explained
+### Key Concepts
 
-#### 1. Mongoose Schema (models/User.js)
-A Schema is like a table definition. It says: "every User must have a name, email, password, and role."
+#### Mongoose Schema
+Defines the shape of data in MongoDB (like a table schema in SQL).
 ```javascript
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  email: { type: String, unique: true }
+  email: { type: String, unique: true },
+  role: { type: String, enum: ['patient', 'doctor'] }
 });
 ```
 
-#### 2. Password Hashing
-We never store plain passwords. bcryptjs converts "mypassword" → "$2b$10$xyz...abc" (unreadable).
+#### Password Hashing
+Passwords are never stored as plain text. bcryptjs hashes them before saving.
 ```javascript
-// Before saving, hash the password automatically
 userSchema.pre('save', async function() {
   this.password = await bcrypt.hash(this.password, 10);
 });
 ```
 
-#### 3. Sessions
-Sessions keep users logged in. After login, the server stores your userId in a session cookie.
+#### Sessions
+Sessions persist login state. The session is stored in MongoDB via `connect-mongo`.
 ```javascript
-req.session.userId = user._id; // Save on login
-// On next request, check: if (req.session.userId) { /* logged in */ }
+req.session.userId = user._id;   // set on login
+req.session.userRole = user.role;
+// Subsequent requests: check req.session.userId to verify login
 ```
 
-#### 4. Middleware (middleware/auth.js)
-Middleware runs before your route handler. The `protect` middleware blocks unauthenticated users.
+#### Middleware
+`protect` blocks unauthenticated requests. `authorize(...roles)` restricts by role.
 ```javascript
-// Without middleware — anyone can access
-app.get('/dashboard', (req, res) => { ... });
-
-// With middleware — only logged-in users
-app.get('/dashboard', protect, (req, res) => { ... });
+// Only doctors can change appointment status
+router.put('/:id/status', authorize('doctor', 'admin'), handler);
 ```
 
-#### 5. populate() — Joining Collections
-MongoDB doesn't auto-join. We use `.populate()` to replace an ID with actual data.
+#### populate()
+Replaces stored MongoDB ObjectIDs with the actual document data.
 ```javascript
-// Without populate: { patient: "64abc123...", doctor: "64xyz456..." }
-// With populate:    { patient: { name: "Alice" }, doctor: { name: "Dr. Smith" } }
+// Without: { patient: "64abc...", doctor: "64xyz..." }
+// With:    { patient: { name: "Alice" }, doctor: { name: "Dr. Smith" } }
 await Appointment.find().populate('patient', 'name').populate('doctor', 'name');
 ```
 
@@ -344,109 +280,177 @@ await Appointment.find().populate('patient', 'name').populate('doctor', 'name');
 
 ### Auth Routes (`/api/auth`)
 
-| Method | URL | What it does | Body required |
-|--------|-----|--------------|---------------|
+| Method | URL | What it does | Body |
+|--------|-----|--------------|------|
 | POST | `/api/auth/register` | Create new account | `name, email, password, role` |
 | POST | `/api/auth/login` | Login | `email, password` |
-| POST | `/api/auth/logout` | Logout | None |
-| GET | `/api/auth/me` | Get current user | None |
+| POST | `/api/auth/logout` | Logout | — |
+| GET | `/api/auth/me` | Get current logged-in user | — |
 
-### Appointment Routes (`/api/appointments`) — All require login
+### Appointment Routes (`/api/appointments`) — Require login
 
-| Method | URL | What it does |
-|--------|-----|--------------|
-| GET | `/api/appointments` | Get my appointments |
-| POST | `/api/appointments` | Book new appointment |
-| PUT | `/api/appointments/:id` | Reschedule appointment |
-| DELETE | `/api/appointments/:id` | Cancel appointment |
-| GET | `/api/appointments/doctors` | List all doctors |
-| GET | `/api/appointments/slots/:doctorId/:date` | Available slots |
-| PUT | `/api/appointments/:id/status` | Update status (doctor only) |
+| Method | URL | What it does | Who |
+|--------|-----|--------------|-----|
+| GET | `/api/appointments` | Get my appointments | All |
+| POST | `/api/appointments` | Book new appointment | Patient |
+| PUT | `/api/appointments/:id` | Reschedule | Patient |
+| DELETE | `/api/appointments/:id` | Cancel | Patient |
+| GET | `/api/appointments/doctors` | List all doctors | All |
+| GET | `/api/appointments/slots/:doctorId/:date` | Available slots | All |
+| PUT | `/api/appointments/:id/status` | Approve / Reject / Complete | **Doctor only** |
 
-### Testing with curl (optional)
+---
+
+## Deploying to Vercel
+
+Vercel is a serverless hosting platform — perfect for Node.js + Express apps. Deployment is free and connects directly to your GitHub repo.
+
+> ✅ **Why Vercel over Render?**
+> Vercel offers instant deploys, automatic HTTPS, zero cold-start on paid tier, a global CDN for static files, and a cleaner dashboard. For a Node.js Express app, Vercel works seamlessly with the `vercel.json` config below.
+
+---
+
+### STEP 1 — Prepare Your Project for Vercel
+
+Vercel runs Node apps as serverless functions. Create an `api/` folder with an entry file:
 
 ```bash
-# Register a patient
-curl -X POST http://localhost:3000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"name":"John","email":"john@test.com","password":"pass123","role":"patient"}'
+mkdir api
+```
 
-# Login
-curl -X POST http://localhost:3000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"john@test.com","password":"pass123"}'
+Create `api/index.js`:
+
+```javascript
+// api/index.js — Vercel serverless entry point
+const app = require('../server');
+module.exports = app;
+```
+
+Update `server.js` — export the app instead of calling `app.listen` directly:
+
+```javascript
+// At the bottom of server.js, replace app.listen(...) with:
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+}
+
+module.exports = app;
+```
+
+Create `vercel.json` in the project root:
+
+```json
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/index.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "public/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/index.js" },
+    { "src": "/login",    "dest": "/api/index.js" },
+    { "src": "/register", "dest": "/api/index.js" },
+    { "src": "/dashboard","dest": "/api/index.js" },
+    { "src": "/book",     "dest": "/api/index.js" },
+    { "src": "/help",     "dest": "/api/index.js" },
+    { "src": "/(.*)",     "dest": "/public/$1"    }
+  ]
+}
 ```
 
 ---
 
-## Deploying for Free
-
-Deploy your app so anyone in the world can access it.
-We use **Render.com** (free hosting) + **MongoDB Atlas** (free database).
-
-### STEP 1 — Push to GitHub
+### STEP 2 — Push to GitHub
 
 ```bash
-# Inside your project folder:
+# Inside your project folder
 git init
 git add .
 git commit -m "Initial commit: Hospital Appointment System"
 
-# Create a new repo at github.com, then:
+# Create a new EMPTY repo at github.com (no README), then:
 git remote add origin https://github.com/YOUR_USERNAME/hospital-appointment-system.git
+git branch -M main
 git push -u origin main
 ```
 
-### STEP 2 — Set Up MongoDB Atlas
+---
 
-1. Go to https://www.mongodb.com/atlas → Sign up free
-2. Create a **Free M0 cluster**
-3. Under **Database Access** → Add a user with username + password
-4. Under **Network Access** → Add IP: `0.0.0.0/0` (allow all — for simplicity)
-5. Click **Connect** → copy your connection string:
-   ```
-   mongodb+srv://myuser:mypassword@cluster0.abc123.mongodb.net/hospital_db
-   ```
+### STEP 3 — Set Up MongoDB Atlas for Production
 
-### STEP 3 — Deploy on Render.com
+Make sure you've already done Step 2 in the Installation section above.
 
-1. Go to https://render.com → Sign up free (use GitHub login)
-2. Click **New** → **Web Service**
-3. Connect your GitHub repo
-4. Fill in settings:
+**Important:** Under **Network Access** in Atlas, ensure `0.0.0.0/0` is added to the IP allowlist so Vercel's dynamic IPs can connect.
 
-| Setting | Value |
-|---|---|
-| Name | hospital-appointment-system |
-| Environment | Node |
-| Build Command | `npm install` |
-| Start Command | `node server.js` |
+---
 
-5. Scroll to **Environment Variables** → Add:
+### STEP 4 — Deploy on Vercel
 
+1. Go to **https://vercel.com** → Sign up free (use GitHub login for easiest setup)
+2. Click **Add New** → **Project**
+3. Click **Import** next to your `hospital-appointment-system` repository
+4. Vercel auto-detects Node.js. Keep default settings.
+5. Scroll to **Environment Variables** and add:
+
+   | Key | Value |
+   |-----|-------|
+   | `MONGODB_URI` | `mongodb+srv://youruser:yourpass@cluster.mongodb.net/hospital_db` |
+   | `SESSION_SECRET` | `any-long-random-string-at-least-32-chars` |
+   | `NODE_ENV` | `production` |
+
+6. Click **Deploy**
+
+Vercel will build and deploy in ~30 seconds. You'll get a URL like:
+`https://hospital-appointment-system.vercel.app`
+
+---
+
+### STEP 5 — Seed Your Production Database
+
+After deploying, run `seed.js` once pointing at your Atlas URI:
+
+```bash
+# Set the MONGODB_URI to your Atlas connection string in .env, then:
+node seed.js
 ```
-MONGODB_URI = mongodb+srv://youruser:yourpass@cluster.mongodb.net/hospital_db
-SESSION_SECRET = any-long-random-string-eg-abc123xyz789
-NODE_ENV = production
-PORT = 3000
-```
 
-6. Click **Create Web Service**
+This inserts the test accounts into Atlas so you can log in on the live site.
 
-Render will build and deploy your app. After ~2 minutes, you'll get a URL like:
-`https://hospital-appointment-system.onrender.com`
+---
 
-> ⚠️ Free Render apps "sleep" after 15 minutes of no traffic. The first request after sleep takes ~30 seconds to wake up. This is normal for free tier.
+### STEP 6 — Re-deploy After Changes
 
-### STEP 4 — Re-deploy After Changes
+Every `git push` to your `main` branch triggers an automatic redeploy on Vercel. No manual steps needed.
 
 ```bash
 git add .
-git commit -m "Fix: updated dashboard layout"
+git commit -m "Update: improved dashboard UI"
 git push
+# Vercel redeploys automatically in ~20 seconds ✅
 ```
 
-Render automatically re-deploys when you push to GitHub. 🎉
+---
+
+### Vercel vs Render — Quick Comparison
+
+| Feature | Vercel | Render |
+|---|---|---|
+| Free tier | ✅ Generous | ✅ Available |
+| Cold start | ⚡ Fast (edge network) | 🐢 ~30s sleep on free tier |
+| Deploy trigger | Push to GitHub | Push to GitHub |
+| Static files | ✅ Global CDN | ✅ Served from server |
+| Custom domains | ✅ Free | ✅ Free |
+| Env variables | ✅ Dashboard UI | ✅ Dashboard UI |
+| Node.js support | ✅ Serverless functions | ✅ Always-on process |
+
+> Vercel is the recommended platform for this project because static assets are served from a global CDN and there's no sleep delay on the free tier.
 
 ---
 
@@ -455,11 +459,13 @@ Render automatically re-deploys when you push to GitHub. 🎉
 | Error | Cause | Fix |
 |---|---|---|
 | `Cannot find module 'express'` | `npm install` not run | Run `npm install` |
-| `MongoDB connection error` | Wrong URI or MongoDB not started | Check `.env` MONGODB_URI; start `mongod` |
-| `Port 3000 already in use` | Another process using port | Change PORT in `.env` to 3001 |
-| `Cannot GET /dashboard` | File path wrong | Ensure `public/pages/dashboard.html` exists |
-| `req.session undefined` | session middleware not set up | Check `server.js` for `app.use(session(...))` |
-| Render: `Application error` | Missing env variables | Add all env vars in Render dashboard |
+| `MongoServerError: bad auth` | Wrong Atlas username/password | Re-check MONGODB_URI in Vercel env vars |
+| `MongoNetworkError: connect ECONNREFUSED` | IP not whitelisted in Atlas | Add `0.0.0.0/0` in Atlas → Network Access |
+| `Port 3000 already in use` | Another process on port | Change PORT in `.env` to 3001 |
+| Vercel: `404 on /dashboard` | Missing route in vercel.json | Ensure all page routes are listed in `vercel.json` routes |
+| Vercel: `Function timeout` | Slow MongoDB cold connect | Add `?connectTimeoutMS=30000` to your Atlas URI |
+| Sessions lost on Vercel | No persistent server between requests | Ensure `SESSION_SECRET` is set and `connect-mongo` is configured |
+| `req.session undefined` | Session middleware not loaded | Check `server.js` — `app.use(session(...))` must come before routes |
 
 ---
 
@@ -467,26 +473,26 @@ Render automatically re-deploys when you push to GitHub. 🎉
 
 After finishing this project, you should understand:
 
-- [ ] What a REST API is and how HTTP methods (GET, POST, PUT, DELETE) work
-- [ ] How Express routes and middleware work
-- [ ] How MongoDB stores data as documents (JSON-like objects)
-- [ ] Why we hash passwords and never store them in plain text
-- [ ] How sessions keep users logged in
-- [ ] How the frontend (fetch) talks to the backend (Express)
-- [ ] How to deploy a Node.js app for free
+- [ ] What a REST API is and how HTTP verbs (GET, POST, PUT, DELETE) map to actions
+- [ ] How Express routing and middleware work
+- [ ] How MongoDB stores JSON-like documents and how Mongoose schemas enforce structure
+- [ ] Why passwords must be hashed and never stored plain
+- [ ] How sessions keep users logged in across requests
+- [ ] How the frontend `fetch()` API communicates with the backend
+- [ ] How role-based access control works (patients vs doctors)
+- [ ] How to configure and deploy a Node.js app on Vercel with environment variables
 
 ---
 
 ## Next Steps to Improve This Project
 
-Once you're comfortable, try adding:
-
-1. **Email notifications** — Send confirmation email on booking (use Nodemailer)
-2. **Admin panel** — A separate page for admins to manage all users
-3. **Search & filter** — Filter appointments by date, doctor, or status
-4. **JWT Authentication** — Replace sessions with JSON Web Tokens
-5. **React frontend** — Rebuild the UI using React.js
+1. **Email notifications** — Send booking confirmation via Nodemailer + Gmail SMTP
+2. **Admin panel** — Dedicated admin page to manage all users and appointments
+3. **Search & filter** — Filter dashboard by date range, doctor name, or status
+4. **JWT Authentication** — Replace sessions with stateless JSON Web Tokens (better for serverless)
+5. **React frontend** — Rebuild the UI with React + React Router for a SPA experience
+6. **Appointment reminders** — Scheduled cron jobs to notify patients 24h before
 
 ---
 
-*Built for learning full-stack web development. Feel free to fork and improve!*
+*Built for learning full-stack web development. Deployed on Vercel + MongoDB Atlas.*

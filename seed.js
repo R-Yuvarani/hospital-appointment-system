@@ -16,32 +16,32 @@ const seedData = async () => {
   // Create test users
   const users = await User.create([
     {
-      name: 'Alice Patient',
-      email: 'patient@test.com',
-      password: 'password123',
+      name: 'Hari Prasath A',
+      email: 'hari09111999@gmail.com',
+      password: 'password',
       role: 'patient',
-      phone: '9876543210'
+      phone: '9043804079'
     },
     {
-      name: 'Dr. Smith',
-      email: 'doctor@test.com',
-      password: 'password123',
+      name: 'Dr. Yuvarani R',
+      email: 'yuvarani2906@gmail.com',
+      password: 'password',
       role: 'doctor',
       specialization: 'General Physician',
       phone: '9876543211'
     },
     {
-      name: 'Dr. Priya Sharma',
-      email: 'priya@test.com',
-      password: 'password123',
+      name: 'Dr. Monisha',
+      email: 'monisha@gmail.com',
+      password: 'password',
       role: 'doctor',
       specialization: 'Cardiologist',
       phone: '9876543212'
     },
     {
-      name: 'Dr. Raj Kumar',
-      email: 'raj@test.com',
-      password: 'password123',
+      name: 'Dr. Roshan',
+      email: 'roshan@gmail.com',
+      password: 'password',
       role: 'doctor',
       specialization: 'Orthopedic Surgeon',
       phone: '9876543213'
@@ -50,8 +50,8 @@ const seedData = async () => {
 
   console.log(`✅ Created ${users.length} users`);
   console.log('\n📋 Test Login Credentials:');
-  console.log('   Patient  → patient@test.com  / password123');
-  console.log('   Doctor   → doctor@test.com   / password123');
+  console.log('   Patient  → hari09111999@gmail.com  / password');
+  console.log('   Doctor   → yuvarani2906@gmail.com   / password');
   console.log('\n🚀 Now run: npm run dev');
 
   process.exit(0);

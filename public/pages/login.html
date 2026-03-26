@@ -3,14 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login - MediBook</title>
+  <title>Login - Hospital Appointment System</title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body style="background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%); min-height:100vh;">
 
   <div class="auth-wrapper">
     <div class="auth-box">
-      <a href="/" style="text-decoration:none;font-size:1.4rem;font-weight:700;color:#2563eb;">Medi<span style="color:#10b981;">Book</span></a>
+      <a href="/" style="text-decoration:none;font-size:1.2rem;font-weight:700;color:#2563eb;">
+        Hospital <span style="color:#10b981;">Appointment System</span>
+      </a>
 
       <h2 style="margin-top:20px;">Welcome back</h2>
       <p class="subtitle">Sign in to manage your appointments</p>
@@ -37,12 +39,9 @@
         Don't have an account? <a href="/register" style="color:var(--primary); font-weight:600;">Register</a>
       </p>
 
-      <!-- Quick test credentials for development -->
-      <div style="margin-top:24px; padding:16px; background:#f8fafc; border-radius:8px; font-size:0.82rem; color:var(--text-light);">
-        <strong>Test Accounts:</strong><br>
-        Patient: patient@test.com / password123<br>
-        Doctor: doctor@test.com / password123
-      </div>
+      <p style="text-align:center; margin-top:10px; font-size:0.82rem;">
+        <a href="/help" style="color:var(--text-light);">Need test credentials? Visit the Help page</a>
+      </p>
     </div>
   </div>
 
@@ -54,11 +53,9 @@
     });
 
     async function handleLogin() {
-      // Get values from inputs
       const email = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value;
 
-      // Basic validation
       if (!email || !password) {
         return showAlert('alert', 'Please fill in all fields', 'error');
       }
@@ -68,16 +65,9 @@
       btn.textContent = 'Signing in...';
 
       try {
-        // Call our login API
         const data = await api.post('/api/auth/login', { email, password });
-
         showAlert('alert', `Welcome back, ${data.user.name}!`, 'success');
-
-        // Redirect after 1 second
-        setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 1000);
-
+        setTimeout(() => { window.location.href = '/dashboard'; }, 1000);
       } catch (err) {
         showAlert('alert', err.message, 'error');
         btn.disabled = false;
@@ -85,7 +75,6 @@
       }
     }
 
-    // Allow pressing Enter to submit
     document.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') handleLogin();
     });

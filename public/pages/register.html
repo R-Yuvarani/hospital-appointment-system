@@ -3,17 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Register - MediBook</title>
+  <title>Register - Hospital Appointment System</title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body style="background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%); min-height:100vh;">
 
   <div class="auth-wrapper">
     <div class="auth-box">
-      <a href="/" style="text-decoration:none;font-size:1.4rem;font-weight:700;color:#2563eb;">Medi<span style="color:#10b981;">Book</span></a>
+      <a href="/" style="text-decoration:none;font-size:1.2rem;font-weight:700;color:#2563eb;">
+        Hospital <span style="color:#10b981;">Appointment System</span>
+      </a>
 
       <h2 style="margin-top:20px;">Create Account</h2>
-      <p class="subtitle">Join MediBook to book appointments easily</p>
+      <p class="subtitle">Join us to book appointments easily</p>
 
       <div id="alert" class="alert"></div>
 
@@ -90,13 +92,9 @@
       btn.textContent = 'Creating account...';
 
       try {
-        const data = await api.post('/api/auth/register', {
-          name, email, phone, role, specialization, password
-        });
-
+        await api.post('/api/auth/register', { name, email, phone, role, specialization, password });
         showAlert('alert', 'Account created! Redirecting...', 'success');
         setTimeout(() => window.location.href = '/dashboard', 1200);
-
       } catch (err) {
         showAlert('alert', err.message, 'error');
         btn.disabled = false;
