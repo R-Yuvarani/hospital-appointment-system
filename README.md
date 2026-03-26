@@ -1,7 +1,7 @@
 # 🏥 Hospital Appointment System
 
 A full-stack web application for booking hospital appointments online.
-Built with **Node.js**, **Express**, **MongoDB**, and vanilla **HTML/CSS/JavaScript** — deployed on **Vercel**.
+Built with **Node.js**, **Express**, **MongoDB**, and **HTML/CSS/JavaScript** — deployed on **Vercel**.
 
 ---
 
@@ -186,10 +186,10 @@ This creates 4 test accounts in your database:
 
 | Role | Email | Password |
 |------|-------|----------|
-| Patient | patient@test.com | password123 |
-| Doctor | doctor@test.com | password123 |
-| Doctor | priya@test.com | password123 |
-| Doctor | raj@test.com | password123 |
+| Patient | hari09111999@gmail.com | password |
+| Doctor | yuvarani2906@gmail.com | password |
+| Doctor | monisha@gmail.com | password |
+| Doctor | roshan@gmail.com | password |
 
 > These credentials are also visible on the `/help` page of the running app.
 
@@ -270,7 +270,7 @@ router.put('/:id/status', authorize('doctor', 'admin'), handler);
 Replaces stored MongoDB ObjectIDs with the actual document data.
 ```javascript
 // Without: { patient: "64abc...", doctor: "64xyz..." }
-// With:    { patient: { name: "Alice" }, doctor: { name: "Dr. Smith" } }
+// With:    { patient: { name: "Madhu" }, doctor: { name: "Dr. Moni" } }
 await Appointment.find().populate('patient', 'name').populate('doctor', 'name');
 ```
 
@@ -408,7 +408,7 @@ Make sure you've already done Step 2 in the Installation section above.
 6. Click **Deploy**
 
 Vercel will build and deploy in ~30 seconds. You'll get a URL like:
-`https://hospital-appointment-system.vercel.app`
+`https://hospital-appointment-system-bay.vercel.app/`
 
 ---
 
@@ -466,32 +466,6 @@ git push
 | Vercel: `Function timeout` | Slow MongoDB cold connect | Add `?connectTimeoutMS=30000` to your Atlas URI |
 | Sessions lost on Vercel | No persistent server between requests | Ensure `SESSION_SECRET` is set and `connect-mongo` is configured |
 | `req.session undefined` | Session middleware not loaded | Check `server.js` — `app.use(session(...))` must come before routes |
-
----
-
-## Learning Checkpoints
-
-After finishing this project, you should understand:
-
-- [ ] What a REST API is and how HTTP verbs (GET, POST, PUT, DELETE) map to actions
-- [ ] How Express routing and middleware work
-- [ ] How MongoDB stores JSON-like documents and how Mongoose schemas enforce structure
-- [ ] Why passwords must be hashed and never stored plain
-- [ ] How sessions keep users logged in across requests
-- [ ] How the frontend `fetch()` API communicates with the backend
-- [ ] How role-based access control works (patients vs doctors)
-- [ ] How to configure and deploy a Node.js app on Vercel with environment variables
-
----
-
-## Next Steps to Improve This Project
-
-1. **Email notifications** — Send booking confirmation via Nodemailer + Gmail SMTP
-2. **Admin panel** — Dedicated admin page to manage all users and appointments
-3. **Search & filter** — Filter dashboard by date range, doctor name, or status
-4. **JWT Authentication** — Replace sessions with stateless JSON Web Tokens (better for serverless)
-5. **React frontend** — Rebuild the UI with React + React Router for a SPA experience
-6. **Appointment reminders** — Scheduled cron jobs to notify patients 24h before
 
 ---
 
